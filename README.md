@@ -1,31 +1,36 @@
 # 🚀 Desafio Técnico Avanade – Microserviços
 
-Este projeto implementa uma solução baseada em **arquitetura de microserviços**, com gestão de **estoque de produtos** e **vendas** em uma plataforma de e-commerce.  
-A comunicação entre os serviços é feita por meio de **API Gateway** e **RabbitMQ** (para mensageria assíncrona).  
+Este projeto implementa uma solução baseada em **arquitetura de microserviços**, com gestão de **estoque de produtos** e **vendas** em uma plataforma de e-commerce.
+A comunicação entre os serviços é feita por meio de **API Gateway** e **RabbitMQ** (para mensageria assíncrona).
 
 ---
 
 ## 📌 Arquitetura da Solução
 
-- **Microserviço de Estoque**  
-  - Cadastro e consulta de produtos  
-  - Controle e atualização de quantidades em estoque  
+* **Microserviço de Estoque**
 
-- **Microserviço de Vendas**  
-  - Criação e consulta de pedidos  
-  - Validação de estoque antes da compra  
-  - Publicação de eventos de vendas no RabbitMQ  
+  * Cadastro e consulta de produtos
+  * Controle e atualização de quantidades em estoque
 
-- **API Gateway**  
-  - Roteamento centralizado das requisições  
-  - Autenticação via JWT  
+* **Microserviço de Vendas**
 
-- **RabbitMQ**  
-  - Comunicação assíncrona entre serviços (ex.: vendas notificam estoque)  
+  * Criação e consulta de pedidos
+  * Validação de estoque antes da compra
+  * Publicação de eventos de vendas no RabbitMQ
 
-- **Banco de Dados Relacional**  
-  - Persistência dos dados de produtos e pedidos  
-  - Implementado com **Entity Framework Core**
+* **API Gateway**
+
+  * Roteamento centralizado das requisições
+  * Autenticação via JWT
+
+* **RabbitMQ**
+
+  * Comunicação assíncrona entre serviços (ex.: vendas notificam estoque)
+
+* **Banco de Dados Relacional**
+
+  * Persistência dos dados de produtos e pedidos
+  * Implementado com **Entity Framework Core**
 
 ---
 
@@ -75,3 +80,17 @@ classDiagram
     Pedido --> VendaCriadaEvent : gera
     VendaCriadaEvent --> EstoqueAtualizadoEvent : consome/gera
     EstoqueAtualizadoEvent --> Produto : atualiza
+```
+
+---
+
+## Pré-requisitos
+
+* Docker e Docker Compose instalados
+* RabbitMQ rodando (via `docker-compose.yml` do projeto)
+
+Para subir o ambiente:
+
+```bash
+docker compose up -d rabbitmq
+```
