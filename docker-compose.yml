@@ -1,0 +1,52 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "YourStrong!Passw0rd"
+      ACCEPT_EULA: "Y"
+
+  gateway:
+    build:
+      context: ./gateway/Gateway.Api
+      dockerfile: Dockerfile
+    container_name: api_gateway
+    ports:
+      - "8000:80"
+    depends_on:
+      - rabbitmq
+      - sqlserver
+
+  estoque:
+    build:
+      context: ./services/estoque/Estoque.Api
+      dockerfile: Dockerfile
+    container_name: estoque_service
+    ports:
+      - "5001:80"
+    depends_on:
+      - rabbitmq
+      - sqlserver
+
+  vendas:
+    build:
+      context: ./services/vendas/Vendas.Api
+      dockerfile: Dockerfile
+    container_name: vendas_service
+    ports:
+      - "5002:80"
+    depends_on:
+      - rabbitmq
+      - sqlserver
