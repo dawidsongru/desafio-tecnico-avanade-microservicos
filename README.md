@@ -1,6 +1,3 @@
-# desafio-tecnico-avanade-microservicos
-Desafio Técnico Avanade - Microserviços
-
 # 🚀 Desafio Técnico Avanade – Microserviços
 
 Este projeto implementa uma solução baseada em **arquitetura de microserviços**, com gestão de **estoque de produtos** e **vendas** em uma plataforma de e-commerce.  
