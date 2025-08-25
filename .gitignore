@@ -1,0 +1,99 @@
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+secrets.json
+
+# Dependências do .NET
+**/bin/
+**/obj/
+**/publish/
+*.nupkg
+
+# Dependências do Node.js (se houver frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Logs
+*.log
+**/logs/
+**/Logs/
+
+# Configurações de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Arquivos de usuário
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Docker
+.docker/
+**/Dockerfile.dev
+docker-compose.override.yml
+docker-compose.yml.backup
+*.backup
+*.bak
+
+# Scripts locais de desenvolvimento
+start.sh
+stop.sh
+
+# Arquivos temporários
+**/temp/
+**/tmp/
+*.tmp
+*.temp
+
+# Arquivos de configuração local
+appsettings.Local.json
+appsettings.Development.local.json
+**/appsettings.*.json.user
+
+# Banco de dados local
+*.mdf
+*.ldf
+*.sdf
+
+# Coverage reports
+coverage/
+**/coverage/
+*.coverage
+*.cover
+
+# Test results
+**/TestResults/
+*.trx
+
+# NuGet
+**/.nuget/
+nuget.exe
+
+# Rider
+*.sln.iml
+
+# MSBuild
+**/msbuild.exe
+**/msbuild.bin
+
+# Python (se aplicável)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Volumes Docker (se estiverem no mesmo diretório)
+**/postgres-data/
+**/rabbitmq-data/
+**/elasticsearch-data/

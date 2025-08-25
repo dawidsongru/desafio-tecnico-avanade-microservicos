@@ -3,7 +3,7 @@ version: '3.8'
 networks:
   avanade-network:
     driver: bridge
-    name: avanade-network  # Nome explícito para a rede
+    name: avanade-network
 
 volumes:
   postgres-data:
@@ -17,8 +17,8 @@ services:
     container_name: rabbitmq
     hostname: rabbitmq
     ports:
-      - "0.0.0.0:5672:5672"  # Escuta em todas as interfaces
-      - "0.0.0.0:15672:15672"  # Escuta em todas as interfaces
+      - "0.0.0.0:5672:5672"
+      - "0.0.0.0:15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: password
@@ -38,7 +38,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # Banco de Dados - PostgreSQL
+  # Banco de Dados - PostgreSQL (PORTA ALTERADA para 5433)
   database:
     image: postgres:13-alpine
     container_name: postgres
@@ -46,8 +46,11 @@ services:
       POSTGRES_DB: avanadedb
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
+      # ✅ VARIÁVEIS ADICIONADAS:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "0.0.0.0:5432:5432"  # Escuta em todas as interfaces
+      - "0.0.0.0:5433:5432"  # Externa:5433 → Container:5432
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
@@ -72,12 +75,12 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms256m -Xmx256m
-      - network.host=0.0.0.0  # Permite acesso por IP
+      - network.host=0.0.0.0
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     ports:
-      - "0.0.0.0:9200:9200"  # Escuta em todas as interfaces
-      - "0.0.0.0:9300:9300"  # Escuta em todas as interfaces
+      - "0.0.0.0:9200:9200"
+      - "0.0.0.0:9300:9300"
     networks:
       avanade-network:
         aliases:
@@ -99,13 +102,13 @@ services:
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - SERVER_HOST=0.0.0.0
-      - SERVER_NAME=kibana.local  # Nome do host para Kibana
+      - SERVER_NAME=kibana.local
     networks:
       avanade-network:
         aliases:
           - kibana.local
     ports:
-      - "0.0.0.0:5601:5601"  # Escuta em todas as interfaces
+      - "0.0.0.0:5601:5601"
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -119,14 +122,14 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # API Gateway (SERVIÇO CORRIGIDO)
+  # API Gateway
   gateway:
     build:
       context: ./gateway/Gateway.Api
       dockerfile: Dockerfile
     container_name: api_gateway
     ports:
-      - "0.0.0.0:8000:80"  # ✅ CORRIGIDO: Escuta em todas as interfaces
+      - "0.0.0.0:8000:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings:PostgreSQL=Host=database;Database=GatewayDB;Username=admin;Password=password
@@ -137,8 +140,8 @@ services:
       - Services:Estoque=http://estoque:80
       - Services:Vendas=http://vendas:80
       - Elasticsearch:Url=http://elasticsearch:9200
-      - ASPNETCORE_URLS=http://0.0.0.0:80  # ✅ Já estava correto
-      - ASPNETCORE_Kestrel__Endpoints__Http__Url=http://0.0.0.0:80  # ✅ ADICIONADO: Força Kestrel a escutar em todas as interfaces
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - ASPNETCORE_Kestrel__Endpoints__Http__Url=http://0.0.0.0:80
     depends_on:
       rabbitmq:
         condition: service_healthy
