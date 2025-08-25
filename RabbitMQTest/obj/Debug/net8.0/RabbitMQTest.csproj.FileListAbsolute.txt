@@ -1,0 +1,6 @@
+/home/administrador/workspace/desafio-tecnico-avanade-microservicos/RabbitMQTest/obj/Debug/net8.0/RabbitMQTest.csproj.AssemblyReference.cache
+/home/administrador/workspace/desafio-tecnico-avanade-microservicos/RabbitMQTest/obj/Debug/net8.0/RabbitMQTest.GeneratedMSBuildEditorConfig.editorconfig
+/home/administrador/workspace/desafio-tecnico-avanade-microservicos/RabbitMQTest/obj/Debug/net8.0/RabbitMQTest.AssemblyInfoInputs.cache
+/home/administrador/workspace/desafio-tecnico-avanade-microservicos/RabbitMQTest/obj/Debug/net8.0/RabbitMQTest.AssemblyInfo.cs
+/home/administrador/workspace/desafio-tecnico-avanade-microservicos/RabbitMQTest/obj/Debug/net8.0/RabbitMQTest.csproj.CoreCompileInputs.cache
+/home/administrador/workspace/desafio-tecnico-avanade-microservicos/RabbitMQTest/obj/Debug/net8.0/RabbitMQTest.sourcelink.json

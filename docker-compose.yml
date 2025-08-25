@@ -1,52 +1,178 @@
+version: '3.8'
+
+networks:
+  avanade-network:
+    driver: bridge
+    name: avanade-network  # Nome explícito para a rede
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  elasticsearch-data:
+
 services:
+  # Message Broker - RabbitMQ
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management
     container_name: rabbitmq
+    hostname: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "0.0.0.0:5672:5672"  # Escuta em todas as interfaces
+      - "0.0.0.0:15672:15672"  # Escuta em todas as interfaces
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      avanade-network:
+        aliases:
+          - rabbitmq.local
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver
+  # Banco de Dados - PostgreSQL
+  database:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: avanadedb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
     ports:
-      - "1433:1433"
-    environment:
-      SA_PASSWORD: "YourStrong!Passw0rd"
-      ACCEPT_EULA: "Y"
+      - "0.0.0.0:5432:5432"  # Escuta em todas as interfaces
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      avanade-network:
+        aliases:
+          - database.local
+          - postgres.local
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d avanadedb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
+  # Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+      - network.host=0.0.0.0  # Permite acesso por IP
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "0.0.0.0:9200:9200"  # Escuta em todas as interfaces
+      - "0.0.0.0:9300:9300"  # Escuta em todas as interfaces
+    networks:
+      avanade-network:
+        aliases:
+          - elasticsearch.local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_HOST=0.0.0.0
+      - SERVER_NAME=kibana.local  # Nome do host para Kibana
+    networks:
+      avanade-network:
+        aliases:
+          - kibana.local
+    ports:
+      - "0.0.0.0:5601:5601"  # Escuta em todas as interfaces
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5601/api/status"]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # API Gateway (SERVIÇO CORRIGIDO)
   gateway:
     build:
       context: ./gateway/Gateway.Api
       dockerfile: Dockerfile
     container_name: api_gateway
     ports:
-      - "8000:80"
+      - "0.0.0.0:8000:80"  # ✅ CORRIGIDO: Escuta em todas as interfaces
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings:PostgreSQL=Host=database;Database=GatewayDB;Username=admin;Password=password
+      - RabbitMQ:HostName=rabbitmq
+      - RabbitMQ:UserName=admin
+      - RabbitMQ:Password=password
+      - JWT:Secret=YourSuperSecretKeyForJWTTokenEncryption
+      - Services:Estoque=http://estoque:80
+      - Services:Vendas=http://vendas:80
+      - Elasticsearch:Url=http://elasticsearch:9200
+      - ASPNETCORE_URLS=http://0.0.0.0:80  # ✅ Já estava correto
+      - ASPNETCORE_Kestrel__Endpoints__Http__Url=http://0.0.0.0:80  # ✅ ADICIONADO: Força Kestrel a escutar em todas as interfaces
     depends_on:
-      - rabbitmq
-      - sqlserver
+      rabbitmq:
+        condition: service_healthy
+      database:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      avanade-network:
+        aliases:
+          - gateway.local
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
-  estoque:
-    build:
-      context: ./services/estoque/Estoque.Api
-      dockerfile: Dockerfile
-    container_name: estoque_service
-    ports:
-      - "5001:80"
+  # Serviço de teste para Elasticsearch
+  elasticsearch-test:
+    image: curlimages/curl
+    container_name: elasticsearch-test
     depends_on:
-      - rabbitmq
-      - sqlserver
-
-  vendas:
-    build:
-      context: ./services/vendas/Vendas.Api
-      dockerfile: Dockerfile
-    container_name: vendas_service
-    ports:
-      - "5002:80"
-    depends_on:
-      - rabbitmq
-      - sqlserver
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - avanade-network
+    command: >
+      sh -c "
+      echo 'Aguardando Elasticsearch ficar pronto...';
+      sleep 30;
+      echo 'Testando conexão com Elasticsearch...';
+      curl -f http://elasticsearch:9200;
+      echo '';
+      echo 'Testando conexão por IP...';
+      curl -f http://elasticsearch:9200;
+      echo '';
+      echo 'Elasticsearch está funcionando!';
+      "
+    restart: on-failure
